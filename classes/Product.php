@@ -3326,7 +3326,7 @@ class ProductCore extends ObjectModel
 
         // Customization price
         if ((int)$id_customization) {
-            $price += Tools::convertPrice(Customization::getCustomizationPrice($id_customization), $id_currency);
+            $price += Customization::getCustomizationPrice($id_customization);
         }
 
         // Tax
