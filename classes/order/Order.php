@@ -658,10 +658,6 @@ class OrderCore extends ObjectModel
 
             $row['id_address_delivery'] = $this->id_address_delivery;
 
-            if ($customized_datas) {
-                Product::addProductCustomizationPrice($row, $customized_datas);
-            }
-
             /* Stock product */
             $result_array[(int) $row['id_order_detail']] = $row;
         }
