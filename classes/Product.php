@@ -5174,6 +5174,7 @@ class ProductCore extends ObjectModel
     }
 
     /*
+     * @deprecated since version 1.7.6.0
     ** Add customization price for a single product
     */
     public static function addProductCustomizationPrice(&$product, &$customized_datas)

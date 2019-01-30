@@ -147,14 +147,6 @@ function addProductRefreshTotal()
 function editProductRefreshTotal(element)
 {
 	element = element.parent().parent().parent();
-	var element_list = [];
-
-	// Customized product
-	if(element.hasClass('customized'))
-	{
-		var element_list = $('.customized-' + element.find('.edit_product_id_order_detail').val());
-		element = $(element_list[0]);
-	}
 
 	var quantity = parseInt(element.find('td .edit_product_quantity').val());
 	if (quantity < 1 || isNaN(quantity))
@@ -167,43 +159,13 @@ function editProductRefreshTotal(element)
 	if (price < 0 || isNaN(price))
 		price = 0;
 
-	// Customized product
-	if (element_list.length)
-	{
-		var qty = 0;
-		$.each(element_list, function(i, elm) {
-			if($(elm).find('.edit_product_quantity').length)
-			{
-				qty += parseInt($(elm).find('.edit_product_quantity').val());
-				subtotal = makeTotalProductCaculation($(elm).find('.edit_product_quantity').val(), price);
-				var totalProductCustomized = $(elm).find('.total_product');
-				totalProductCustomized.html(subtotal); // temporary value, not formatted
-				formatCurrencyCldr(subtotal, function(v) {
-					totalProductCustomized.html(v);
-				}); // replace with formatted value as soon as CLDR is ready
-			}
-		});
+	var total = makeTotalProductCaculation(quantity, price);
 
-		var total = makeTotalProductCaculation(qty, price);
-
-		var totalProductCustom = element.find('td.total_product');
-		totalProductCustom.html(total); // temporary value, not formatted
-		formatCurrencyCldr(total, function(v) {
-			totalProductCustom.html(v);
-		}); // replace with formatted value as soon as CLDR is ready
-		element.find('td.productQuantity').html(qty);
-	}
-	else
-	{
-		var total = makeTotalProductCaculation(quantity, price);
-
-		var totalProduct = element.find('td.total_product');
-		totalProduct.html(total); // temporary value, not formatted
-		formatCurrencyCldr(total, function(v) {
+	var totalProduct = element.find('td.total_product');
+	totalProduct.html(total); // temporary value, not formatted
+	formatCurrencyCldr(total, function(v) {
 			totalProduct.html(v);
 		}); // replace with formatted value as soon as CLDR is ready
-	}
-
 }
 
 function makeTotalProductCaculation(quantity, price)
@@ -235,9 +197,7 @@ function refreshProductLineView(element, view)
 
 	var element_list = [];
 	if (element.parent().parent().find('.edit_product_id_order_detail').length)
-		var element_list = $('.customized-' + element.parent().parent().find('.edit_product_id_order_detail').val());
-	if (!element_list.length)
-		element_list = $(element.parent().parent());
+	var element_list = $(element.parent().parent());
 
 	var current_product_line = element.parent().parent();
 	current_product_line.replaceWith(new_product_line);
@@ -642,18 +602,10 @@ function init()
 				{
 					current_product = data;
 
-					var element_list = $('.customized-' + element.parents('.product-line-row').find('.edit_product_id_order_detail').val());
-					if (!element_list.length)
-					{
-						element_list = element.parents('.product-line-row');
-						element_list.find('td .product_quantity_show').hide();
-						element_list.find('td .product_quantity_edit').show();
-					}
-					else
-					{
-						element_list.find('td .product_quantity_show').hide();
-						element_list.find('td .product_quantity_edit').show();
-					}
+					var element_list = element.parents('.product-line-row');
+					element_list.find('td .product_quantity_show').hide();
+					element_list.find('td .product_quantity_edit').show();
+
 					element_list.find('td .product_price_show').hide();
 					element_list.find('td .product_price_edit').show();
 					element_list.find('td.cancelCheck').hide();
@@ -685,9 +637,7 @@ function init()
 		current_product = null;
 		$('.edit_product_fields').hide();
 		$('.row-editing-warning').hide();
-		var element_list = $('.customized-' + $(this).parent().parent().find('.edit_product_id_order_detail').val());
-		if (!element_list.length)
-			element_list = $($(this).parent().parent());
+		var	element_list = $($(this).parent().parent());
 		element_list.find('td .product_price_show').show();
 		element_list.find('td .product_quantity_show').show();
 		element_list.find('td .product_price_edit').hide();
@@ -719,12 +669,8 @@ function init()
 		if (confirm(txt_confirm))
 		{
 			var element = $(this);
-			var element_list = $('.customized-' + $(this).parent().parent().find('.edit_product_id_order_detail').val());
 			query = 'ajax=1&token='+token+'&action=editProductOnOrder&id_order='+id_order+'&';
-			if (element_list.length)
-				query += element_list.find('input:visible, select:visible, .edit_product_id_order_detail').serialize();
-			else
-				query += element.parent().parent().find('input:visible, select:visible, .edit_product_id_order_detail').serialize();
+			query += element.parent().parent().find('input:visible, select:visible, .edit_product_id_order_detail').serialize();
 
 			$.ajax({
 				type: 'POST',
@@ -797,6 +743,7 @@ function init()
 			return false;
 		var tr_product = $(this).closest('.product-line-row');
 		var id_order_detail = $(this).closest('.product-line-row').find('td .edit_product_id_order_detail').val();
+		var tr_customization = $('.customized-' + id_order_detail);
 		var query = 'ajax=1&action=deleteProductLine&token='+token+'&id_order_detail='+id_order_detail+'&id_order='+id_order;
 
 		$.ajax({
@@ -810,6 +757,9 @@ function init()
 				if (data.result)
 				{
 					tr_product.fadeOut('slow', function() {
+						$(this).remove();
+					});
+					tr_customization.fadeOut('slow', function() {
 						$(this).remove();
 					});
 					updateAmounts(data.order);

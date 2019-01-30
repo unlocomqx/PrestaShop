@@ -30,12 +30,11 @@
 	{assign var=product_price value=$product['unit_price_tax_incl']}
 {/if}
 
-{if ($product['product_quantity'] > $product['customized_product_quantity'])}
 <tr class="product-line-row">
 	<td>{if isset($product.image) && $product.image->id}{$product.image_tag}{/if}</td>
 	<td>
 		<a href="{$link->getAdminLink('AdminProducts', true, ['id_product' => $product['product_id']|intval, 'updateproduct' => '1'])|escape:'html':'UTF-8'}">
-			<span class="productName">{$product['product_name']}</span><br />
+			<span class="productName">{$product['product_name']}{if $product['customizedDatas']} - {l s='Customized' d='Admin.Orderscustomers.Feature'}{/if}</span><br />
 			{if $product.product_reference}{l s='Reference number:' d='Admin.Orderscustomers.Feature'} {$product.product_reference}<br />{/if}
 			{if $product.product_supplier_reference}{l s='Supplier reference:' d='Admin.Orderscustomers.Feature'} {$product.product_supplier_reference}{/if}
 		</a>
@@ -74,7 +73,7 @@
 		{/if}
 	</td>
 	<td class="productQuantity text-center">
-		<span class="product_quantity_show{if (int)$product['product_quantity'] - (int)$product['customized_product_quantity'] > 1} badge{/if}">{(int)$product['product_quantity'] - (int)$product['customized_product_quantity']}</span>
+		<span class="product_quantity_show">{(int)$product['product_quantity']}</span>
 		{if $can_edit}
 		<span class="product_quantity_edit" style="display:none;">
 			<input type="text" name="product_quantity" class="edit_product_quantity" value="{$product['product_quantity']|htmlentities}"/>
@@ -95,7 +94,7 @@
 				{l s='%quantity_refunded% (%amount_refunded% refund)' sprintf=['%quantity_refunded%' => $product['product_quantity_refunded'], '%amount_refunded%' => $product['amount_refund']] d='Admin.Orderscustomers.Feature'}
 			{/if}
 			<input type="hidden" value="{$product['quantity_refundable']}" class="partialRefundProductQuantity" />
-			<input type="hidden" value="{(Tools::ps_round($product_price, 2) * ($product['product_quantity'] - $product['customizationQuantityTotal']))}" class="partialRefundProductAmount" />
+			<input type="hidden" value="{(Tools::ps_round($product_price, 2) * $product['product_quantity'])}" class="partialRefundProductAmount" />
 			{if count($product['refund_history'])}
 				<span class="tooltip">
 					<span class="tooltip_label tooltip_button">+</span>
@@ -128,7 +127,7 @@
 	{if $stock_location_is_available}<td class="productQuantity location text-center">{$product['location']}</td>{/if}
 	{if $stock_management}<td class="productQuantity product_stock text-center">{$product['current_stock']}</td>{/if}
 	<td class="total_product">
-		{displayPrice price=(Tools::ps_round($product_price, 2) * ($product['product_quantity'] - $product['customizationQuantityTotal'])) currency=$currency->id}
+		{displayPrice price=(Tools::ps_round($product_price, 2) * $product['product_quantity']) currency=$currency->id}
 	</td>
 	<td colspan="2" style="display: none;" class="add_product_fields">&nbsp;</td>
 	<td class="cancelCheck standard_refund_fields current-edit" style="display:none">
@@ -136,7 +135,7 @@
 		<input type="hidden" name="totalQty" id="totalQty" value="{$product['product_quantity']}" />
 		<input type="hidden" name="productName" id="productName" value="{$product['product_name']}" />
 	{if ((!$order->hasBeenDelivered() OR Configuration::get('PS_ORDER_RETURN')) AND (int)($product['product_quantity_return']) < (int)($product['product_quantity']))}
-		<input type="checkbox" name="id_order_detail[{$product['id_order_detail']}]" id="id_order_detail[{$product['id_order_detail']}]" value="{$product['id_order_detail']}" onchange="setCancelQuantity(this, {$product['id_order_detail']}, {$product['product_quantity'] - $product['customizationQuantityTotal'] - $product['product_quantity_return'] - $product['product_quantity_refunded']})" {if ($product['product_quantity_return'] + $product['product_quantity_refunded'] >= $product['product_quantity'])}disabled="disabled" {/if}/>
+		<input type="checkbox" name="id_order_detail[{$product['id_order_detail']}]" id="id_order_detail[{$product['id_order_detail']}]" value="{$product['id_order_detail']}" onchange="setCancelQuantity(this, {$product['id_order_detail']}, {$product['product_quantity'] - $product['product_quantity_return'] - $product['product_quantity_refunded']})" {if ($product['product_quantity_return'] + $product['product_quantity_refunded'] >= $product['product_quantity'])}disabled="disabled" {/if}/>
 	{else}
 		--
 	{/if}
@@ -148,11 +147,7 @@
 		<input type="text" id="cancelQuantity_{$product['id_order_detail']}" name="cancelQuantity[{$product['id_order_detail']}]" onchange="checkTotalRefundProductQuantity(this)" value="" />
 	{/if}
 
-	{if $product['customizationQuantityTotal']}
-		{assign var=productQuantity value=($product['product_quantity']-$product['customizationQuantityTotal'])}
-	{else}
-		{assign var=productQuantity value=$product['product_quantity']}
-	{/if}
+	{assign var=productQuantity value=$product['product_quantity']}
 
 	{if ($order->hasBeenDelivered())}
 		{$product['product_quantity_refunded']}/{$productQuantity-$product['product_quantity_refunded']}
@@ -237,7 +232,6 @@
 			{l s='Cancel' d='Admin.Actions'}
 		</button>
 	</td>
-	{/if}
 </tr>
    {if isset($product.pack_items) && $product.pack_items|@count > 0}
     <tr>

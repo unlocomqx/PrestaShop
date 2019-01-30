@@ -894,9 +894,9 @@ class AdminOrdersControllerCore extends AdminController
         } elseif (Tools::isSubmit('cancelProduct') && isset($order)) {
             // Cancel product from order
             if ($this->access('delete')) {
-                if (!Tools::isSubmit('id_order_detail') && !Tools::isSubmit('id_customization')) {
+                if (!Tools::isSubmit('id_order_detail')) {
                     $this->errors[] = $this->trans('You must select a product.', array(), 'Admin.Orderscustomers.Notification');
-                } elseif (!Tools::isSubmit('cancelQuantity') && !Tools::isSubmit('cancelCustomizationQuantity')) {
+                } elseif (!Tools::isSubmit('cancelQuantity')) {
                     $this->errors[] = $this->trans('You must enter a quantity.', array(), 'Admin.Orderscustomers.Notification');
                 } else {
                     $productList = Tools::getValue('id_order_detail');
@@ -904,68 +904,22 @@ class AdminOrdersControllerCore extends AdminController
                         $productList = array_map('intval', $productList);
                     }
 
-                    $customizationList = Tools::getValue('id_customization');
-                    if ($customizationList) {
-                        $customizationList = array_map('intval', $customizationList);
-                    }
-
                     $qtyList = Tools::getValue('cancelQuantity');
                     if ($qtyList) {
                         $qtyList = array_map('intval', $qtyList);
                     }
 
-                    $customizationQtyList = Tools::getValue('cancelCustomizationQuantity');
-                    if ($customizationQtyList) {
-                        $customizationQtyList = array_map('intval', $customizationQtyList);
-                    }
-
                     $full_product_list = $productList;
                     $full_quantity_list = $qtyList;
 
-                    if ($customizationList) {
-                        foreach ($customizationList as $key => $id_order_detail) {
-                            $full_product_list[(int) $id_order_detail] = $id_order_detail;
-                            if (isset($customizationQtyList[$key])) {
-                                $full_quantity_list[(int) $id_order_detail] += $customizationQtyList[$key];
-                            }
-                        }
-                    }
-
-                    if ($productList || $customizationList) {
+                    if ($productList) {
                         if ($productList) {
                             $id_cart = Cart::getCartIdByOrderId($order->id);
-                            $customization_quantities = Customization::countQuantityByCart($id_cart);
 
                             foreach ($productList as $key => $id_order_detail) {
                                 $qtyCancelProduct = abs($qtyList[$key]);
                                 if (!$qtyCancelProduct) {
                                     $this->errors[] = $this->trans('No quantity has been selected for this product.', array(), 'Admin.Orderscustomers.Notification');
-                                }
-
-                                $order_detail = new OrderDetail($id_order_detail);
-                                $customization_quantity = 0;
-                                if (array_key_exists($order_detail->product_id, $customization_quantities) && array_key_exists($order_detail->product_attribute_id, $customization_quantities[$order_detail->product_id])) {
-                                    $customization_quantity = (int) $customization_quantities[$order_detail->product_id][$order_detail->product_attribute_id];
-                                }
-
-                                if (($order_detail->product_quantity - $customization_quantity - $order_detail->product_quantity_refunded - $order_detail->product_quantity_return) < $qtyCancelProduct) {
-                                    $this->errors[] = $this->trans('An invalid quantity was selected for this product.', array(), 'Admin.Orderscustomers.Notification');
-                                }
-                            }
-                        }
-                        if ($customizationList) {
-                            $customization_quantities = Customization::retrieveQuantitiesFromIds(array_keys($customizationList));
-
-                            foreach ($customizationList as $id_customization => $id_order_detail) {
-                                $qtyCancelProduct = abs($customizationQtyList[$id_customization]);
-                                $customization_quantity = $customization_quantities[$id_customization];
-
-                                if (!$qtyCancelProduct) {
-                                    $this->errors[] = $this->trans('No quantity has been selected for this product.', array(), 'Admin.Orderscustomers.Notification');
-                                }
-
-                                if ($qtyCancelProduct > ($customization_quantity['quantity'] - ($customization_quantity['quantity_refunded'] + $customization_quantity['quantity_returned']))) {
-                                    $this->errors[] = $this->trans('An invalid quantity was selected for this product.', array(), 'Admin.Orderscustomers.Notification');
                                 }
                             }
                         }
@@ -984,6 +938,12 @@ class AdminOrdersControllerCore extends AdminController
                                 if (!$order->deleteProduct($order, $order_detail, $qty_cancel_product)) {
                                     $this->errors[] = $this->trans('An error occurred while attempting to delete the product.', array(), 'Admin.Orderscustomers.Notification') . ' <span class="bold">' . $order_detail->product_name . '</span>';
                                 }
+
+                                if ((int)$order_detail->id_customization) {
+                                    if (!$order->deleteCustomization($order_detail->id_customization, $qtyCancelProduct, $order_detail)) {
+                                        $this->errors[] = $this->trans('An error occurred while attempting to delete product customization.', array(), 'Admin.Orderscustomers.Notification') . ' ' . $id_customization;
+                                    }
+                                }
                                 // Update weight SUM
                                 $order_carrier = new OrderCarrier((int) $order->getIdOrderCarrier());
                                 if (Validate::isLoadedObject($order_carrier)) {
@@ -999,15 +959,7 @@ class AdminOrdersControllerCore extends AdminController
                                 Hook::exec('actionProductCancel', array('order' => $order, 'id_order_detail' => (int) $id_order_detail), null, false, true, false, $order->id_shop);
                             }
                         }
-                        if (!count($this->errors) && $customizationList) {
-                            foreach ($customizationList as $id_customization => $id_order_detail) {
-                                $order_detail = new OrderDetail((int) ($id_order_detail));
-                                $qtyCancelProduct = abs($customizationQtyList[$id_customization]);
-                                if (!$order->deleteCustomization($id_customization, $qtyCancelProduct, $order_detail)) {
-                                    $this->errors[] = $this->trans('An error occurred while attempting to delete product customization.', array(), 'Admin.Orderscustomers.Notification') . ' ' . $id_customization;
-                                }
-                            }
-                        }
+
                         // E-mail params
                         if ((Tools::isSubmit('generateCreditSlip') || Tools::isSubmit('generateDiscount')) && !count($this->errors)) {
                             $customer = new Customer((int) ($order->id_customer));
@@ -1786,18 +1738,6 @@ class AdminOrdersControllerCore extends AdminController
         // products current stock informations (from stock_available)
         $stockLocationIsAvailable = false;
         foreach ($products as &$product) {
-            // Get total customized quantity for current product
-            $customized_product_quantity = 0;
-
-            if (is_array($product['customizedDatas'])) {
-                foreach ($product['customizedDatas'] as $customizationPerAddress) {
-                    foreach ($customizationPerAddress as $customizationId => $customization) {
-                        $customized_product_quantity += (int) $customization['quantity'];
-                    }
-                }
-            }
-
-            $product['customized_product_quantity'] = $customized_product_quantity;
             $product['current_stock'] = StockAvailable::getQuantityAvailableByProduct($product['product_id'], $product['product_attribute_id'], $product['id_shop']);
             $resume = OrderSlip::getProductSlipResume($product['id_order_detail']);
             $product['quantity_refundable'] = $product['product_quantity'] - $resume['product_quantity'];
@@ -2489,19 +2429,7 @@ class AdminOrdersControllerCore extends AdminController
         // Check fields validity
         $this->doEditProductValidation($order_detail, $order, isset($order_invoice) ? $order_invoice : null);
 
-        // If multiple product_quantity, the order details concern a product customized
-        $product_quantity = 0;
-        if (is_array(Tools::getValue('product_quantity'))) {
-            foreach (Tools::getValue('product_quantity') as $id_customization => $qty) {
-                // Update quantity of each customization
-                Db::getInstance()->update('customization', array('quantity' => (int) $qty), 'id_customization = ' . (int) $id_customization);
-                // Calculate the real quantity of the product
-                $product_quantity += $qty;
-            }
-        } else {
-            $product_quantity = Tools::getValue('product_quantity');
-        }
-
+        $product_quantity = Tools::getValue('product_quantity');
         $product_price_tax_incl = Tools::ps_round(Tools::getValue('product_price_tax_incl'), 2);
         $product_price_tax_excl = Tools::ps_round(Tools::getValue('product_price_tax_excl'), 2);
         $total_products_tax_incl = $product_price_tax_incl * $product_quantity;
@@ -2656,11 +2584,7 @@ class AdminOrdersControllerCore extends AdminController
             )));
         }
 
-        if (is_array(Tools::getValue('product_quantity'))) {
-            $view = $this->createTemplate('_customized_data.tpl')->fetch();
-        } else {
-            $view = $this->createTemplate('_product_line.tpl')->fetch();
-        }
+        $view = $this->createTemplate('_product_line.tpl')->fetch();
 
         $this->sendChangedNotification($order);
 
@@ -2673,7 +2597,6 @@ class AdminOrdersControllerCore extends AdminController
             'invoices' => $invoice_array,
             'documents_html' => $this->createTemplate('_documents.tpl')->fetch(),
             'shipping_html' => $this->createTemplate('_shipping.tpl')->fetch(),
-            'customized_product' => is_array(Tools::getValue('product_quantity')),
         )));
     }
 
