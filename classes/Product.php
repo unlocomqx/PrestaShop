@@ -5117,6 +5117,9 @@ class ProductCore extends ObjectModel
         return $customized_datas;
     }
 
+    /*
+     * @deprecated 1.7.6.0
+    */
     public static function addCustomizationPrice(&$products, &$customized_datas)
     {
         if (!$customized_datas) {
@@ -5174,7 +5177,7 @@ class ProductCore extends ObjectModel
     }
 
     /*
-     * @deprecated since version 1.7.6.0
+     * @deprecated 1.7.6.0
     ** Add customization price for a single product
     */
     public static function addProductCustomizationPrice(&$product, &$customized_datas)
