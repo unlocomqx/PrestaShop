@@ -939,7 +939,7 @@ class AdminOrdersControllerCore extends AdminController
                                     $this->errors[] = $this->trans('An error occurred while attempting to delete the product.', array(), 'Admin.Orderscustomers.Notification') . ' <span class="bold">' . $order_detail->product_name . '</span>';
                                 }
 
-                                if ((int)$order_detail->id_customization) {
+                                if ((int) $order_detail->id_customization) {
                                     if (!$order->deleteCustomization($order_detail->id_customization, $qtyCancelProduct, $order_detail)) {
                                         $this->errors[] = $this->trans('An error occurred while attempting to delete product customization.', array(), 'Admin.Orderscustomers.Notification') . ' ' . $id_customization;
                                     }
