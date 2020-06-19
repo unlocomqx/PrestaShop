@@ -171,7 +171,7 @@ abstract class ModuleCore implements ModuleInterface
     /** @var Smarty_Internal_Template|null */
     protected $current_subtemplate = null;
 
-    protected static $update_translations_after_install = true;
+    protected static $update_translations_after_install = false;
 
     protected static $_batch_mode = false;
     protected static $_defered_clearCache = array();

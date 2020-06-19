@@ -1091,6 +1091,7 @@ class FrontControllerCore extends Controller
             'inline' => false,
             'attributes' => null,
             'server' => 'local',
+            'hash' => null,
         ];
         $params = array_merge($default_params, $params);
 
