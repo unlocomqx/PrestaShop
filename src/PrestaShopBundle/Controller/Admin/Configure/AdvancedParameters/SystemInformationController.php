@@ -31,6 +31,7 @@ use PrestaShopBundle\Security\Annotation\AdminSecurity;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Responsible of "Configure > Advanced Parameters > Information" page display.
@@ -48,7 +49,6 @@ class SystemInformationController extends FrameworkBundleAdminController
     public function indexAction(Request $request)
     {
         $legacyController = $request->get('_legacy_controller');
-        $requirementsSummary = $this->getRequirementsChecker()->getSummary();
         $systemInformationSummary = $this->getSystemInformation()->getSummary();
 
         return [
@@ -61,9 +61,23 @@ class SystemInformationController extends FrameworkBundleAdminController
             'requireFilterStatus' => false,
             'errorMessage' => 'ok',
             'system' => $systemInformationSummary,
-            'requirements' => $requirementsSummary,
             'userAgent' => $request->headers->get('User-Agent'),
         ];
+    }
+
+    /**
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))", message="Access denied.")
+     *
+     * @return Response
+     */
+    public function displayCheckRequirementsAction()
+    {
+        return $this->render(
+            '@PrestaShop/Admin/Configure/AdvancedParameters/SystemInformation/system_requirement.html.twig',
+            [
+                'requirements' => $this->getRequirementsChecker()->getSummary(),
+            ]
+        );
     }
 
     /**

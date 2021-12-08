@@ -1,0 +1,38 @@
+{% if requirements.failRequired == false %}
+  <p>
+    <strong>{{ 'Required parameters:'|trans }}</strong>
+    <span class="text-success">{{ 'OK'|trans({}, 'Admin.Advparameters.Notification') }}</span>
+  </p>
+{% else %}
+  <p>
+    <strong>{{ 'Required parameters:'|trans }}</strong>
+    <span class="text-danger">{{ 'Please fix the following error(s)'|trans({}, 'Admin.Advparameters.Notification') }}</span>
+  </p>
+  <ul>
+    {% for key, value in requirements.testsRequired %}
+      {% if 'fail' == value %}
+        <li>{{ requirements.testsErrors[key] }}</li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
+{% if requirements.failOptional is defined %}
+  {% if requirements.failOptional == false %}
+    <p>
+      <strong>{{ 'Optional parameters:'|trans }}</strong>
+      <span class="text-success">{{ 'OK'|trans({}, 'Admin.Advparameters.Notification') }}</span>
+    </p>
+  {% else %}
+    <p>
+      <strong>{{ 'Optional parameters:'|trans }}</strong>
+      <span class="text-danger">{{ 'Please fix the following error(s)'|trans({}, 'Admin.Advparameters.Notification') }}</span>
+    </p>
+    <ul>
+      {% for key, value in requirements.testsOptional %}
+        {% if 'fail' == value %}
+          <li>{{ requirements.testsErrors[key] }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endif %}

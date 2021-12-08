@@ -14,3 +14,12 @@ admin_system_information_check_files:
     _legacy_controller: AdminInformation
     _legacy_link: AdminInformation:checkFiles
   condition: 'request.isXmlHttpRequest()'
+
+admin_system_information_check_requirements:
+  path: /requirements
+  methods: [ POST ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\SystemInformationController::displayCheckRequirementsAction'
+    _legacy_controller: AdminInformation
+    _legacy_link: AdminInformation:checkFiles
+  condition: 'request.isXmlHttpRequest()'

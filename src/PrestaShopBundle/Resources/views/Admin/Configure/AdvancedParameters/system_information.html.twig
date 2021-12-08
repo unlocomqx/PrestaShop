@@ -204,45 +204,8 @@
         <i class="material-icons">info_outline</i> {{ 'Check your configuration'|trans }}
       </h3>
       <div class="card-block">
-        <div class="card-text">
-          {% if requirements.failRequired == false %}
-            <p>
-              <strong>{{ 'Required parameters:'|trans }}</strong>
-              <span class="text-success">{{ 'OK'|trans({}, 'Admin.Advparameters.Notification') }}</span>
-            </p>
-          {% else %}
-            <p>
-              <strong>{{ 'Required parameters:'|trans }}</strong>
-              <span class="text-danger">{{ 'Please fix the following error(s)'|trans({}, 'Admin.Advparameters.Notification') }}</span>
-            </p>
-            <ul>
-              {% for key, value in requirements.testsRequired %}
-                {% if 'fail' == value %}
-                  <li>{{ requirements.testsErrors[key] }}</li>
-                {% endif %}
-              {% endfor %}
-            </ul>
-          {% endif %}
-          {% if requirements.failOptional is defined %}
-            {% if requirements.failOptional == false %}
-              <p>
-                <strong>{{ 'Optional parameters:'|trans }}</strong>
-                <span class="text-success">{{ 'OK'|trans({}, 'Admin.Advparameters.Notification') }}</span>
-              </p>
-            {% else %}
-              <p>
-                <strong>{{ 'Optional parameters:'|trans }}</strong>
-                <span class="text-danger">{{ 'Please fix the following error(s)'|trans({}, 'Admin.Advparameters.Notification') }}</span>
-              </p>
-              <ul>
-                {% for key, value in requirements.testsOptional %}
-                  {% if 'fail' == value %}
-                    <li>{{ requirements.testsErrors[key] }}</li>
-                  {% endif %}
-                {% endfor %}
-              </ul>
-            {% endif %}
-          {% endif %}
+        <div class="card-text" id="checkConfigurationContent">
+          <i class="material-icons">loop</i> {{ 'Checking system requirements...'|trans({}, 'Admin.Advparameters.Notification') }}
         </div>
       </div>
     </div>
@@ -300,6 +263,16 @@
                 .append(html);
             }
           });
+        }
+      });
+
+      $.ajax({
+        type: 'POST',
+        url: '{{ path("admin_system_information_check_requirements") }}',
+        data: {},
+        dataType: 'html',
+        success: function (html) {
+          $("#checkConfigurationContent").html(html);
         }
       });
     });
