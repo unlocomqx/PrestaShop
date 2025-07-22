@@ -1369,24 +1369,23 @@ class AdminTranslationsControllerCore extends AdminController
             } elseif (Tools::isSubmit('submitTranslationsModules')) {
                 if ($this->access('edit')) {
                     // Get list of modules
-                    if ($modules = $this->getListModules()) {
-                        // Get files of all modules
-                        $arr_files = $this->getAllModuleFiles($modules, null, $this->lang_selected->iso_code, true);
+                    $modules = Tools::getIsset('module') ? [Tools::getValue('module')] : $this->getListModules();
+                    // Get files of all modules
+                    $arr_files = $this->getAllModuleFiles($modules, null, $this->lang_selected->iso_code, true);
 
-                        // Find and write all translation modules files
-                        foreach ($arr_files as $value) {
-                            $this->findAndWriteTranslationsIntoFile($value['file_name'], $value['files'], $value['theme'], $value['module'], $value['dir']);
-                        }
+                    // Find and write all translation modules files
+                    foreach ($arr_files as $value) {
+                        $this->findAndWriteTranslationsIntoFile($value['file_name'], $value['files'], $value['theme'], $value['module'], $value['dir']);
+                    }
 
-                        // Clear modules cache
-                        Tools::clearAllCache();
+                    // Clear modules cache
+                    Tools::clearAllCache();
 
-                        // Redirect
-                        if (Tools::getIsset('submitTranslationsModulesAndStay')) {
-                            $this->redirect(true);
-                        } else {
-                            $this->redirect();
-                        }
+                    // Redirect
+                    if (Tools::getIsset('submitTranslationsModulesAndStay')) {
+                        $this->redirect(true);
+                    } else {
+                        $this->redirect();
                     }
                 } else {
                     $this->errors[] = $this->trans('You do not have permission to edit this.', [], 'Admin.Notifications.Error');
